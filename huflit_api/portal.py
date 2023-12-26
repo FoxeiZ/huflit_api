@@ -65,6 +65,11 @@ class PortalParser:
 
         return parsed_data
 
+    @staticmethod
+    def parse_semester(html: str):
+        parsed_data: dict[str, str] = dict()
+        soup = BeautifulSoup(html, "html.parser")
+
 
 class PortalPage(BasePage):
     BASE_URL = "https://portal.huflit.edu.vn"
@@ -229,7 +234,7 @@ class PortalPage(BasePage):
         return {d["DisPlayWeek"]: d["Week"] for d in req.json()}
 
     @lru_cache(maxsize=12)
-    def __get_weekly_schedule(self, year: int, term: int, week: int) -> str:
+    def get_week_schedule(self, year: int, term: int, week: int) -> str:
         """
         Retrieves the weekly schedule for a given year, term, and week.
 
@@ -256,9 +261,26 @@ class PortalPage(BasePage):
         return response.text
 
     def get_weekly_schedule(self):
+        """
+        Retrieves the weekly schedule for the current term.
+        """
         current_date = date.today().isocalendar()
         current_week = current_date[1]
         current_year = current_date[0]
 
-        data = self.__get_weekly_schedule(current_year, current_week)
+        data = self.get_week_schedule(
+            current_year, self.get_current_term(), current_week
+        )
         return PortalParser.parse_schedule(data)
+
+    def get_semester(self):
+        current_year = date.today().year
+        current_term = self.get_current_term()
+
+        data = self._do_request(
+            "GET",
+            CONSTANTS_PORTAL.SEMESTER_SCHEDULE_URL,
+            params={"YearStudy": current_year, "TermID": f"HK0{current_term}"},
+        )
+
+        return PortalParser.parse_semester(data.text)
