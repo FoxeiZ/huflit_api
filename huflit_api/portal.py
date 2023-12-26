@@ -18,6 +18,10 @@ from .errors import WrongCredentials
 __all__ = ["PortalParser", "PortalPage"]
 
 
+def strip_string(string: str):
+    return " ".join(string.split())
+
+
 class PortalParser:
     @staticmethod
     def parse_notification(html: str):
@@ -50,7 +54,7 @@ class PortalParser:
             if not parsed_data.get(day_name):
                 parsed_data[day_name] = []
 
-            data = list(period._all_strings(True))
+            data = [strip_string(t) for t in period._all_strings(True)]
             parsed_data[day_name].append(
                 {
                     "room": data[0],
