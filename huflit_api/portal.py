@@ -208,33 +208,37 @@ class PortalPage(BasePage):
         return PortalParser.parse_notification(final_req.text)
 
     @timed_lru_cache(maxsize=2)
-    def get_current_term(self):
+    def get_current_term(self) -> str:
         req = self._do_request("GET", CONSTANTS_PORTAL.SCHEDULE_URL)
         soup = BeautifulSoup(req.text, "html.parser")
-        return int(
-            soup.find("select", {"id": "TermID"})
+        return (
+            "HK0"
+            + soup.find("select", {"id": "TermID"})
             .find("option", {"selected": "selected"})  # type: ignore
             .text[-1]  # type: ignore
         )
 
     @lru_cache(maxsize=12)
-    def get_week_list(self, year: int | None = None, term: int | None = None):
+    def get_week_list(self, year: int | None = None, term: int | str | None = None):
         if not self.is_login:
             self.login_mcs()
 
         if not year:
             year = date.today().year
 
+        if isinstance(term, int):
+            term = f"HK0{term}"
+
         if not term:
             term = self.get_current_term()
 
         req = self._do_request(
-            "GET", f"{CONSTANTS_PORTAL.API_WEEK_URL}/{year}-{year+1}$HK0{term}"
+            "GET", f"{CONSTANTS_PORTAL.API_WEEK_URL}/{year}-{year+1}${term}"
         )
         return {d["DisPlayWeek"]: d["Week"] for d in req.json()}
 
     @lru_cache(maxsize=12)
-    def get_week_schedule(self, year: int, term: int, week: int) -> str:
+    def get_week_schedule(self, year: int, term: int | str, week: int) -> str:
         """
         Retrieves the weekly schedule for a given year, term, and week.
 
@@ -251,10 +255,13 @@ class PortalPage(BasePage):
         if not self.is_login:
             self.login_mcs()
 
+        if isinstance(term, int):
+            term = f"HK0{term}"
+
         url = CONSTANTS_PORTAL.DRAWING_SCHEDULE_URL
         params = {
             "YearStudy": f"{year}-{year + 1}",
-            "TermID": f"HK0{term}",
+            "TermID": term,
             "Week": week,
         }
         response = self._do_request("GET", url, params=params)
@@ -280,7 +287,7 @@ class PortalPage(BasePage):
         data = self._do_request(
             "GET",
             CONSTANTS_PORTAL.SEMESTER_SCHEDULE_URL,
-            params={"YearStudy": current_year, "TermID": f"HK0{current_term}"},
+            params={"YearStudy": current_year, "TermID": current_term},
         )
 
         return PortalParser.parse_semester(data.text)
