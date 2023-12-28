@@ -71,8 +71,28 @@ class PortalParser:
 
     @staticmethod
     def parse_semester(html: str):
-        parsed_data: dict[str, str] = dict()
+        parsed_data: dict[str, list[dict[str, str]]] = dict()
         soup = BeautifulSoup(html, "html.parser")
+
+        tbody = soup.find("tbody")
+        for tr in tbody.find_all("tr"):  # type: ignore
+            data = [strip_string(t) for t in tr._all_strings(True)]
+            day_name = dayname.from_full_str(data[5])
+            if not parsed_data.get(day_name):
+                parsed_data[day_name] = []
+
+            parsed_data[day_name].append(
+                {
+                    "lhp": data[1],
+                    "subject": data[2],
+                    "credits": data[3],
+                    "class_id": data[4],
+                    "time": " - ".join(period_time.from_detail_periods(data[6])),
+                    "room": data[7],
+                    "teacher": data[8],
+                    "week_study": data[9],
+                }
+            )
 
 
 class PortalPage(BasePage):
@@ -284,14 +304,16 @@ class PortalPage(BasePage):
         )
         return PortalParser.parse_schedule(data)
 
-    def get_semester(self):
-        current_year = date.today().year
-        current_term = self.get_current_term()
-
+    def get_semester(self, year: int, term: str):
         data = self._do_request(
             "GET",
             CONSTANTS_PORTAL.SEMESTER_SCHEDULE_URL,
-            params={"YearStudy": current_year, "TermID": current_term},
+            params={"YearStudy": f"{year}-{year + 1}", "TermID": term},
         )
 
         return PortalParser.parse_semester(data.text)
+
+    def get_current_semester(self):
+        current_year = date.today().year
+        current_term = self.get_current_term()
+        return self.get_semester(current_year, current_term)
