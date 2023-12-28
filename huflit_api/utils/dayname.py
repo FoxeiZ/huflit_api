@@ -24,7 +24,7 @@ FULL_REVERSED_DAYNAME_MAPPING = (
     "Tư",
     "Năm",
     "Sáu",
-    "Bảy",
+    "Bảy",
     "Chủ Nhật",
 )
 
@@ -37,11 +37,11 @@ def from_str(day: str) -> str:
 
 
 def from_full_str(day: str) -> str:
-    return DAYNAME_MAPPING[FULL_REVERSED_DAYNAME_MAPPING.index(day)]
+    return DAYNAME_MAPPING[FULL_REVERSED_DAYNAME_MAPPING.index(day.strip())]
 
 
 def reverse_from_str(day: str):
-    return REVERSED_DAYNAME_MAPPING[DAYNAME_MAPPING.index(day)]
+    return REVERSED_DAYNAME_MAPPING[DAYNAME_MAPPING.index(day.strip())]
 
 
 def from_int(day: int) -> str:
