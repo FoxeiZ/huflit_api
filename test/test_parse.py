@@ -82,7 +82,7 @@ class TestParse(unittest.TestCase):
             )
 
     def test_semester(self):
-        with open(TESTDATA_DIR + "/Semester.html") as f:
+        with open(TESTDATA_DIR + "/DrawingStudentSchedule_Perior.html") as f:
             html = f.read()
             self.assertDictEqual(
                 PortalParser.parse_semester(html),
