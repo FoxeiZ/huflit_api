@@ -121,6 +121,8 @@ class PortalParser:
                 }
             )
 
+        return parsed_data
+
 
 class PortalPage(BasePage):
     BASE_URL = "https://portal.huflit.edu.vn"
