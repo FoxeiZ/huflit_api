@@ -50,3 +50,7 @@ def from_int(day: int) -> str:
 
 def reverse_from_int(day: int):
     return REVERSED_DAYNAME_MAPPING[day - 2]
+
+
+def to_int(day: str):
+    return DAYNAME_MAPPING.index(day.strip())
