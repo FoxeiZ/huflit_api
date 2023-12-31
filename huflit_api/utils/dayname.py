@@ -37,6 +37,9 @@ def from_str(day: str) -> str:
 
 
 def from_full_str(day: str) -> str:
+    if day == "Chủ Nhật":
+        return DAYNAME_MAPPING[-1]
+
     return DAYNAME_MAPPING[FULL_REVERSED_DAYNAME_MAPPING.index(day.strip())]
 
 
