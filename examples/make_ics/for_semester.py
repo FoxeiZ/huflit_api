@@ -25,19 +25,6 @@ portal.login_mcs()
 semester = portal.get_current_semester()
 pprint(semester)
 
-# "Tuesday": [
-#     {
-#         "lhp": "111111111111",
-#         "subject": "Lập trình trên thiết bị di động",
-#         "credits": "4",
-#         "class_id": "T22101",
-#         "time": "9:30 - 12:00",
-#         "room": "PM04",
-#         "teacher": "Teacher1",
-#         "week_study": "(01/01/1990->01/01/1990)",
-#     },
-# ]
-
 # ------------------------------- #
 ical = Calendar()
 for day, events in semester.items():
