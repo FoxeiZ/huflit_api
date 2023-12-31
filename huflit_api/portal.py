@@ -77,12 +77,13 @@ class PortalParser:
             "subject": tdS[2].text,
             "credits": tdS[3].text,
             "class_id": tdS[4].text,
-            "time": tdS[5].text,
-            "room": tdS[6].text,
-            "teacher": tdS[7].text,
-            "week_study": tdS[8].text,
+            "time": " - ".join(period_time.from_detail_periods(tdS[6].text)),
+            "period_detail": tdS[6].text,
+            "room": tdS[7].text,
+            "teacher": tdS[8].text,
+            "week_study": tdS[9].text,
         }
-        return data
+        return data, dayname.from_full_str(tdS[5].text)
 
     @staticmethod
     def parse_semester(html: str):
@@ -95,8 +96,7 @@ class PortalParser:
 
             if len(data) < 10:
                 print("td in table seems to be missing data. Using legacy parsing.")
-                d = PortalParser.__legacy_parse_semester(tr)
-                day_name = dayname.from_full_str(d["time"])
+                d, day_name = PortalParser.__legacy_parse_semester(tr)
 
                 if not parsed_data.get(day_name):
                     parsed_data[day_name] = []
@@ -115,6 +115,7 @@ class PortalParser:
                     "credits": data[3],
                     "class_id": data[4],
                     "time": " - ".join(period_time.from_detail_periods(data[6])),
+                    "period_detail": data[6],
                     "room": data[7],
                     "teacher": data[8],
                     "week_study": data[9],
