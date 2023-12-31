@@ -12,7 +12,7 @@ from .utils import dayname, period_time
 from .constants import portal as CONSTANTS_PORTAL
 from .constants import mcs as CONSTANTS_MCS
 
-from .errors import WrongCredentials
+from .errors import WrongCredentials, ObsoleteError
 
 
 __all__ = ["PortalParser", "PortalPage"]
@@ -225,19 +225,22 @@ class PortalPage(BasePage):
 
         Obsolete. Use `login_mcs`. Due to school policy, this method is no longer usable.
         """
-        r = self._do_request(
-            "POST",
-            CONSTANTS_PORTAL.LOGIN_PAGE_URL,
-            data={
-                CONSTANTS_PORTAL.LOGIN_USER_ARGS: self.user.email,
-                CONSTANTS_PORTAL.LOGIN_PASS_ARGS: self.user.password,
-            },
-        )
+        raise ObsoleteError("Login method is obsolete. Use login_mcs instead")
 
-        if r.status_code == 200:
-            return
+        #
+        # r = self._do_request(
+        #     "POST",
+        #     CONSTANTS_PORTAL.LOGIN_PAGE_URL,
+        #     data={
+        #         CONSTANTS_PORTAL.LOGIN_USER_ARGS: self.user.email,
+        #         CONSTANTS_PORTAL.LOGIN_PASS_ARGS: self.user.password,
+        #     },
+        # )
 
-        raise WrongCredentials("Login failed. Check username and password")
+        # if r.status_code == 200:
+        #     return
+
+        # raise WrongCredentials("Login failed. Check username and password")
 
     def get_notification(self):
         """
@@ -245,6 +248,10 @@ class PortalPage(BasePage):
 
         Due to bad web design, we somehow need to redirect from MCS login just to access the homepage.
         Then we can get the notification.
+
+        Returns:
+        --------
+            list: A list of notification that user currently has.
         """
         if not self.is_login:
             self.login_mcs()
@@ -262,6 +269,13 @@ class PortalPage(BasePage):
 
     @timed_lru_cache(maxsize=2)
     def get_current_term(self) -> str:
+        """
+        Retrieves the current term.
+
+        Returns:
+        --------
+            str: The current term. Prefix with 'HK0'
+        """
         req = self._do_request("GET", CONSTANTS_PORTAL.SCHEDULE_URL)
         soup = BeautifulSoup(req.text, "html.parser")
         return (
@@ -272,7 +286,21 @@ class PortalPage(BasePage):
         )
 
     @lru_cache(maxsize=12)
-    def get_week_list(self, year: int | None = None, term: int | str | None = None):
+    def get_week_list(
+        self, year: int | None = None, term: int | str | None = None
+    ) -> dict[str, str]:
+        """
+        Retrieves the list of weeks for a given year and term.
+
+        Args:
+        --------
+            year (int): The year of the schedule.
+            term (int): The term of the schedule.
+
+        Returns:
+        --------
+            dict: A dictionary of week numbers and their corresponding display names.
+        """
         if not self.is_login:
             self.login_mcs()
 
@@ -322,7 +350,11 @@ class PortalPage(BasePage):
 
     def get_weekly_schedule(self):
         """
-        Retrieves the weekly schedule for the current term.
+        Retrieves the current week schedule for the current term.
+
+        Returns:
+        --------
+            dict: The current week schedule for the current term.
         """
         current_date = date.today().isocalendar()
         current_week = current_date[1]
@@ -334,6 +366,18 @@ class PortalPage(BasePage):
         return PortalParser.parse_schedule(data)
 
     def get_semester(self, year: int, term: str):
+        """
+        Retrieves the semester schedule for a given year and term.
+
+        Args:
+        --------
+            year (int): The year of the schedule.
+            term (int): The term of the schedule.
+
+        Returns:
+        --------
+            dict: All subjects in the given semester.
+        """
         data = self._do_request(
             "GET",
             CONSTANTS_PORTAL.SEMESTER_SCHEDULE_URL,
@@ -343,6 +387,13 @@ class PortalPage(BasePage):
         return PortalParser.parse_semester(data.text)
 
     def get_current_semester(self):
+        """
+        Retrieves the current semester for the current year.
+
+        Returns:
+        --------
+            dict: All subjects in the current semester.
+        """
         current_year = date.today().year
         current_term = self.get_current_term()
         return self.get_semester(current_year, current_term)
