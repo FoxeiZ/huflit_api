@@ -1,4 +1,4 @@
-# Make ics file to import into Google calendar or any online calendar that support this file.
+# Make an ics file to import into Google Calendar or any online calendar that supports this file..
 
 ## Configuration
 You need to install requirements.txt first to run any code.
