@@ -11,7 +11,7 @@ from .utils import dayname, period_time
 
 from .constants import portal as CONSTANTS_PORTAL
 from .constants import mcs as CONSTANTS_MCS
-
+from .types.portal import SemesterDict, ScheduleDict
 from .errors import WrongCredentials, ObsoleteError
 
 
@@ -44,7 +44,7 @@ class PortalParser:
 
     @staticmethod
     def parse_schedule(html: str):
-        parsed_data: dict[str, list[dict[str, str]]] = dict()
+        parsed_data: dict[str, list[ScheduleDict]] = dict()
         soup = BeautifulSoup(html, "html.parser")
 
         table = soup.find("table", {"class": "table MainTb"})
@@ -70,9 +70,9 @@ class PortalParser:
         return parsed_data
 
     @staticmethod
-    def __legacy_parse_semester(tr: NavigableString | Tag):
+    def __legacy_parse_semester(tr: NavigableString | Tag) -> tuple[SemesterDict, str]:
         tdS = tr.find_all("td")  # type: ignore
-        data = {
+        data: SemesterDict = {
             "lhp": tdS[1].text,
             "subject": tdS[2].text,
             "credits": tdS[3].text,
@@ -87,7 +87,7 @@ class PortalParser:
 
     @staticmethod
     def parse_semester(html: str):
-        parsed_data: dict[str, list[dict[str, str]]] = dict()
+        parsed_data: dict[str, list[SemesterDict]] = dict()
         soup = BeautifulSoup(html, "html.parser")
 
         tbody = soup.find("tbody")
@@ -98,15 +98,12 @@ class PortalParser:
                 print("td in table seems to be missing data. Using legacy parsing.")
                 d, day_name = PortalParser.__legacy_parse_semester(tr)
 
-                if not parsed_data.get(day_name):
-                    parsed_data[day_name] = []
-
+                parsed_data.setdefault(day_name, [])
                 parsed_data[day_name].append(d)
                 continue
 
             day_name = dayname.from_full_str(data[5])
-            if not parsed_data.get(day_name):
-                parsed_data[day_name] = []
+            parsed_data.setdefault(day_name, [])
 
             parsed_data[day_name].append(
                 {
