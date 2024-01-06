@@ -14,7 +14,7 @@ setup(
         "huflit_api.utils",
         "huflit_api.types",
     ],
-    version="0.1a",
+    version="0.2b",
     license="gpl-3.0",
     description="I hate the HUFLIT web portal, so I'm making this API wrapper.",
     long_description=long_description,
