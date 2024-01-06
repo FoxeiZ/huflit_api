@@ -8,7 +8,12 @@ with open(path.join(this_directory, "README.md"), encoding="utf-8") as f:
 
 setup(
     name="huflit_api",
-    packages=["huflit_api", "huflit_api.constants", "huflit_api.utils"],
+    packages=[
+        "huflit_api",
+        "huflit_api.constants",
+        "huflit_api.utils",
+        "huflit_api.types",
+    ],
     version="0.1a",
     license="gpl-3.0",
     description="I hate the HUFLIT web portal, so I'm making this API wrapper.",
