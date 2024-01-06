@@ -317,7 +317,7 @@ class PortalPage(BasePage):
         return {d["DisPlayWeek"]: d["Week"] for d in req.json()}
 
     @lru_cache(maxsize=12)
-    def get_week_schedule(self, year: int, term: int | str, week: int) -> str:
+    def get_week_schedule(self, year: int, term: int | str, week: int):
         """
         Retrieves the weekly schedule for a given year, term, and week.
 
@@ -344,7 +344,7 @@ class PortalPage(BasePage):
             "Week": week,
         }
         response = self._do_request("GET", url, params=params)
-        return response.text
+        return PortalParser.parse_schedule(response.text)
 
     def get_weekly_schedule(self):
         """
@@ -358,10 +358,9 @@ class PortalPage(BasePage):
         current_week = current_date[1]
         current_year = current_date[0]
 
-        data = self.get_week_schedule(
+        return self.get_week_schedule(
             current_year, self.get_current_term(), current_week
         )
-        return PortalParser.parse_schedule(data)
 
     def get_semester(self, year: int, term: str):
         """
