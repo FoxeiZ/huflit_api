@@ -348,7 +348,7 @@ class PortalPage(BasePage):
         return {d["DisPlayWeek"]: d["Week"] for d in req.json()}
 
     @lru_cache(maxsize=12)
-    def get_week_schedule(self, year: int, term: int | str, week: int):
+    def get_week_schedule(self, year: int | str, term: int | str, week: int):
         """
         Retrieves the weekly schedule for a given year, term, and week.
 
@@ -368,9 +368,12 @@ class PortalPage(BasePage):
         if isinstance(term, int):
             term = f"HK0{term}"
 
+        if isinstance(year, int):
+            year = f"{year}-{year+1}"
+
         url = CONSTANTS_PORTAL.DRAWING_SCHEDULE_URL
         params = {
-            "YearStudy": f"{year}-{year + 1}",
+            "YearStudy": year,
             "TermID": term,
             "Week": week,
         }
@@ -387,14 +390,16 @@ class PortalPage(BasePage):
         """
         current_date = date.today().isocalendar()
         current_week = current_date[1]
-        current_year = current_date[0]
+        current_year = self.get_current_year()
 
         return self.get_week_schedule(
             current_year, self.get_current_term(), current_week
         )
 
     def get_semester(
-        self, term: str, year: int | None = None, year_study: str | None = None
+        self,
+        year: int | str,
+        term: str,
     ):
         """
         Retrieves the semester schedule for a given year and term.
@@ -408,13 +413,13 @@ class PortalPage(BasePage):
         --------
             dict: All subjects in the given semester.
         """
-        if year is not None:
-            year_study = f"{year}-{year + 1}"
+        if isinstance(year, int):
+            year = f"{year}-{year+1}"
 
         data = self._do_request(
             "GET",
             CONSTANTS_PORTAL.SEMESTER_SCHEDULE_URL,
-            params={"YearStudy": year_study, "TermID": term},
+            params={"YearStudy": year, "TermID": term},
         )
 
         return PortalParser.parse_semester(data.text)
@@ -427,6 +432,6 @@ class PortalPage(BasePage):
         --------
             dict: All subjects in the current semester.
         """
-        current_year = self.get_current_year()
-        current_term = self.get_current_term()
-        return self.get_semester(current_term, year_study=current_year)
+        current_year = self.get_current_year(cache_html=True)
+        current_term = self.get_current_term(cache_html=True)
+        return self.get_semester(current_term, current_year)
