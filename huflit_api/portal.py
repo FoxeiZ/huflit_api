@@ -123,6 +123,7 @@ class PortalParser:
 
 
 class PortalPage(BasePage):
+    cache = {}
     BASE_URL = "https://portal.huflit.edu.vn"
 
     def __init__(self, user: User, **kwargs) -> None:
@@ -266,7 +267,7 @@ class PortalPage(BasePage):
         return PortalParser.parse_notification(final_req.text)
 
     @timed_lru_cache(maxsize=2)
-    def get_current_term(self) -> str:
+    def get_current_term(self, cache_html: bool = False) -> str:
         """
         Retrieves the current term.
 
@@ -274,13 +275,43 @@ class PortalPage(BasePage):
         --------
             str: The current term. Prefix with 'HK0'
         """
-        req = self._do_request("GET", CONSTANTS_PORTAL.SCHEDULE_URL)
-        soup = BeautifulSoup(req.text, "html.parser")
+        if cache_html and CONSTANTS_PORTAL.SCHEDULE_URL in self.cache:
+            soup = self.cache[CONSTANTS_PORTAL.SCHEDULE_URL]
+        else:
+            req = self._do_request("GET", CONSTANTS_PORTAL.SCHEDULE_URL)
+            soup = BeautifulSoup(req.text, "html.parser")
+
+        if cache_html:
+            self.cache[CONSTANTS_PORTAL.SCHEDULE_URL] = soup
+
         return (
-            "HK0"
-            + soup.find("select", {"id": "TermID"})
+            soup.find("select", {"id": "TermID"})
             .find("option", {"selected": "selected"})  # type: ignore
-            .text[-1]  # type: ignore
+            .get("value")  # type: ignore
+        )
+
+    @timed_lru_cache(maxsize=2)
+    def get_current_year(self, cache_html: bool = False) -> str:
+        """
+        Retrieves the current semester.
+
+        Returns:
+        --------
+            str: The current semester. Prefix with 'HK0'
+        """
+        if cache_html and CONSTANTS_PORTAL.SCHEDULE_URL in self.cache:
+            soup = self.cache[CONSTANTS_PORTAL.SCHEDULE_URL]
+        else:
+            req = self._do_request("GET", CONSTANTS_PORTAL.SCHEDULE_URL)
+            soup = BeautifulSoup(req.text, "html.parser")
+
+        if cache_html:
+            self.cache[CONSTANTS_PORTAL.SCHEDULE_URL] = soup
+
+        return (
+            soup.find("select", {"id": "YearStudy"})
+            .find("option", {"selected": "selected"})  # type: ignore
+            .get("value")  # type: ignore
         )
 
     @lru_cache(maxsize=12)
@@ -362,7 +393,9 @@ class PortalPage(BasePage):
             current_year, self.get_current_term(), current_week
         )
 
-    def get_semester(self, year: int, term: str):
+    def get_semester(
+        self, term: str, year: int | None = None, year_study: str | None = None
+    ):
         """
         Retrieves the semester schedule for a given year and term.
 
@@ -375,10 +408,13 @@ class PortalPage(BasePage):
         --------
             dict: All subjects in the given semester.
         """
+        if year is not None:
+            year_study = f"{year}-{year + 1}"
+
         data = self._do_request(
             "GET",
             CONSTANTS_PORTAL.SEMESTER_SCHEDULE_URL,
-            params={"YearStudy": f"{year}-{year + 1}", "TermID": term},
+            params={"YearStudy": year_study, "TermID": term},
         )
 
         return PortalParser.parse_semester(data.text)
@@ -391,6 +427,6 @@ class PortalPage(BasePage):
         --------
             dict: All subjects in the current semester.
         """
-        current_year = date.today().year
+        current_year = self.get_current_year()
         current_term = self.get_current_term()
-        return self.get_semester(current_year, current_term)
+        return self.get_semester(current_term, year_study=current_year)
