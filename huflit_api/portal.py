@@ -11,7 +11,7 @@ from .utils import dayname, period_time
 
 from .constants import portal as CONSTANTS_PORTAL
 from .constants import mcs as CONSTANTS_MCS
-from .types.portal import SemesterDict, ScheduleDict
+from .typings.portal import SemesterDict, ScheduleDict
 from .errors import WrongCredentials, ObsoleteError
 
 
@@ -182,7 +182,7 @@ class PortalPage(BasePage):
 
         post_req = self.session.request(
             "POST",
-            CONSTANTS_MCS.BASE_URL + login_data["urlPost"],
+            login_data["urlPost"],
             data=login_payload,
             follow_redirects=True,
         )
